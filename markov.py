@@ -1,4 +1,6 @@
 from collections import defaultdict
+import textwrap
+import re
 import itertools
 import random
 import sys
@@ -28,6 +30,14 @@ class MarkovChain:
         if hitlist is None: return ""
         return random.choice(hitlist)
 
+# https://stackoverflow.com/questions/66086822/how-to-justify-text-right-alignment-in-python
+def justify(txt:str, width:int) -> str:
+    prev_txt = txt
+    while((l:=width-len(txt))>0):
+        txt = re.sub(r"(\s+)", r"\1 ", txt, count=l)
+        if(txt == prev_txt): break
+    return txt.rjust(width)
+
 def arg_get(search, container, default):
     for i, value in enumerate(container):
         if search == value and i+1 < len(container):
@@ -52,13 +62,23 @@ def main():
     with open(filename, "r") as fp:
         text = fp.read()
 
+    # Generate next words based on the initial from the text
     m = MarkovChain(text)
+    builder = []
     current = start
     for _ in range(lines):
         for _ in range(count):
-            print(current, end=' ')
+            builder.append(current)
             current = m.get(current)
-        print()
+
+    # for spacing
+    WORD_LENGTH_FUDGE = 1.33
+    average_word_length = int(sum(map(lambda word: len(word), builder)) / len(builder) * WORD_LENGTH_FUDGE)
+
+    # And pretty print :)
+    formatted = textwrap.fill(" ".join(builder), width=count * average_word_length)
+    for line in formatted.splitlines():
+        print(justify(line, count * average_word_length))
 
     exit(0)
 
